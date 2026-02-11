@@ -3,15 +3,12 @@ package cmd
 import (
 	"fmt"
 	"math/rand"
-
 	"os"
 	"time"
 
-	"github.com/sensepost/godoh/lib"
-
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-
+	"github.com/sensepost/godoh/lib"
 	"github.com/spf13/cobra"
 )
 
@@ -100,5 +97,19 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&options.ProviderName, "provider", "p", "google", "Preferred DNS provider to use. [possible: googlefront, google, cloudflare, quad9, blokada, nextdns, raw]")
 	rootCmd.PersistentFlags().BoolVarP(&options.ValidateTLS, "validate-certificate", "K", false, "Validate DoH provider SSL certificates")
 	rootCmd.PersistentFlags().StringVarP(&options.AESKey, "aeskey", "k", "", "AES key used to encrypt data blobs in communications (ie: openssl rand -hex 16)")
-	rootCmd.PersistentFlags().StringVarP(&options.UserAgent, "user-agent", "a", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36 Edge/18.18362", "Setting a custom User-Agent (default: Edge 44 on Windows 10)")
+
+	// --- START: MODIFIED BLOCK for User-Agent Mimicry ---
+	// Define a list of modern, legitimate User-Agents
+	userAgents := []string{
+		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
+		"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36",
+		"Mozilla/5.0 (X11; Linux x86_64; rv:107.0) Gecko/20100101 Firefox/107.0",
+	}
+	// Seed the random number generator
+	rand.Seed(time.Now().UnixNano())
+	// Pick one at random to be the default
+	randomUserAgent := userAgents[rand.Intn(len(userAgents))]
+	// Set the flag with our randomized default
+	rootCmd.PersistentFlags().StringVarP(&options.UserAgent, "user-agent", "a", randomUserAgent, "Setting a custom User-Agent")
+	// --- END: MODIFIED BLOCK ---
 }
